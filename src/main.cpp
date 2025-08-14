@@ -1,4 +1,5 @@
 #include <CL/cl.h>
+#include <stdio.h>
 
 #include <iostream>
 #include <vector>
@@ -8,6 +9,38 @@
 using namespace std;
 
 int main(int argc, char* argv[]) {
+  string cl;
+  for (int i = 1; i < argc; i++) {
+    string v = argv[i];
+    if (v == "-i") {
+      i++;
+      if (i >= argc) {
+        return 1;
+      }
+      cl = string(argv[i]);
+    }
+  }
+  if (cl.empty()) {
+    return 1;
+  }
+  string src;
+  {
+    FILE* file = fopen(cl.c_str(), "rb");
+    if (!file) {
+      return 1;
+    }
+    while (!feof(file)) {
+      char buffer[512];
+      int read = fread(buffer, 1, sizeof(buffer), file);
+      if (read < 0) {
+        fclose(file);
+        return 1;
+      }
+      src.append(buffer, read);
+    }
+    fclose(file);
+  }
+
   cout << "Platforms:" << endl;
   cl_uint numPlatforms;
   if (clGetPlatformIDs(0, nullptr, &numPlatforms) != 0) {
@@ -60,5 +93,47 @@ int main(int argc, char* argv[]) {
   }
   cl_device_id device = devices[0];
 
+  cl_int err;
+  cl_context ctx = clCreateContext(nullptr, 1, &device, nullptr, nullptr, &err);
+  if (err != 0) {
+    return 1;
+  }
+
+  err = 0;
+  cl_command_queue queue = clCreateCommandQueue(ctx, device, 0, &err);
+  if (err != 0) {
+    return 1;
+  }
+
+  vector<char const*> list;
+  list.push_back(src.c_str());
+  vector<size_t> sizes;
+  sizes.push_back(src.size());
+  err = 0;
+  cl_program program = clCreateProgramWithSource(ctx, 1, list.data(), sizes.data(), &err);
+  if (err != 0) {
+    return 1;
+  }
+
+  if (clBuildProgram(program, 1, &device, nullptr, nullptr, nullptr) != 0) {
+    return 1;
+  }
+
+  cl_int ret = 0;
+  cl_kernel kernel = clCreateKernel(program, "run", &ret);
+  if (ret != 0) {
+    return 1;
+  }
+
+  if (clEnqueueTask(queue, kernel, 0, nullptr, nullptr) != 0) {
+    return 1;
+  }
+
+  clFlush(queue);
+  clFinish(queue);
+  clReleaseKernel(kernel);
+  clReleaseProgram(program);
+  clReleaseCommandQueue(queue);
+  clReleaseContext(ctx);
   return 0;
 }

@@ -10,7 +10,7 @@ if (EXISTS "$ENV{CUDA_PATH}")
 endif()
 list(APPEND dirt_cl_link_libraries OpenCL)
 
-add_executable(dirt-cl src/main.cpp src/main.cl)
+add_executable(dirt-cl src/main.cpp src/kernel.cl)
 
 target_link_libraries(dirt-cl ${dirt_cl_link_libraries})
 target_include_directories(dirt-cl PRIVATE ${dirt_cl_include_directories})
