@@ -1,4 +1,9 @@
-#include <CL/cl.hpp>
+#if defined(__APPLE__)
+#include <OpenCL/cl.h>
+#else
+#include <CL/cl.h>
+#endif
+#include <CL/opencl.hpp>
 #include <stdio.h>
 
 #include <iostream>
@@ -32,11 +37,7 @@ int main(int argc, char* argv[]) {
     }
     while (!feof(file)) {
       char buffer[512];
-      int read = fread(buffer, 1, sizeof(buffer), file);
-      if (read < 0) {
-        fclose(file);
-        return 1;
-      }
+      size_t read = fread(buffer, 1, sizeof(buffer), file);
       src.append(buffer, read);
     }
     fclose(file);
