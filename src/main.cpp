@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) {
   optional<i32> maxY;
   optional<i32> minZ;
   optional<i32> maxZ;
-  int dataVersion = 4063;
+  int dataVersion = INT_MAX;
   vector<i32> simple;
   for (int i = 1; i < argc; i++) {
     string v = argv[i];
@@ -115,6 +115,11 @@ int main(int argc, char* argv[]) {
         }
         simple.push_back(t);
         offset = found + 1;
+      }
+    } else if (v == "-v") {
+      if (sscanf(argv[i], "%d", &dataVersion) != 1) {
+        cerr << "cannot parse -v option: " << argv[i] << endl;
+        return 1;
       }
     }
   }

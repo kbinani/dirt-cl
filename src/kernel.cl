@@ -50,7 +50,13 @@ static i64 NextLong(i64 *state) {
   return ret;
 }
 
-static i64 GetPositionSeed(i32 x, i32 y, i32 z) {
+static i64 GetPositionSeed_v0(i32 x, i32 y, i32 z) {
+  i64 i = (i64)(x * 3129871) ^ (i64)z * LONG(116129781) ^ (i64)y;
+  i = i * i * LONG(42317861) + i * LONG(11);
+  return i;
+}
+
+static i64 GetPositionSeed_v1(i32 x, i32 y, i32 z) {
   i64 i = (i64)(x * 3129871) ^ (i64)z * LONG(116129781) ^ (i64)y;
   i = i * i * LONG(42317861) + i * LONG(11);
   return i >> 16;
@@ -76,16 +82,46 @@ static i32 Abs(i32 v) {
 }
 
 static i32 DirtRotation(i32 x, i32 y, i32 z, i32 dataVersion) {
-  i64 seed = GetPositionSeed(x, y, z);
-  i64 state = Rand(seed);
-  i32 numFacingTypes = 4;
-  if (dataVersion >= 4063) {
+  i32 const numFacingTypes = 4;
+  if (dataVersion >= 4063 /* 24w36a */) {
+    // 1.21.2
     // 24w36a
+    i64 seed = GetPositionSeed_v1(x, y, z);
+    i64 state = Rand(seed);
     return NextIntBounded(&state, numFacingTypes);
-  } else {
+  } else if (dataVersion >= 1459 /* 18w01a */) {
     // 24w35a
+    // 1.21.1
+    // 1.13
+    // 18w11a
+    // 18w07a
+    // 18w03a
+    // 18w01a
+    i64 seed = GetPositionSeed_v1(x, y, z);
+    i64 state = Rand(seed);
     i32 weight = Abs((i32)NextLong(&state)) % numFacingTypes;
     return GetRandomItemIndex(numFacingTypes, weight);
+  } else if (dataVersion >= 0) {
+    // TODO: Between 17w47a and 17w50a, the texture rotation method changed drastically and differs in each version, so further investigation is needed.
+
+    // 17w46a
+    // 1.12.2
+    // 1.12
+    // 1.9
+    // 1.8.9
+    // 14w31a
+    // 14w30a
+    // 14w29a
+    // 14w28a
+    // 14w27b
+    i64 s = GetPositionSeed_v0(x, y, z);
+    i32 v = ((i32)s) >> 16;
+    i32 weight = Abs(v) % numFacingTypes;
+    return GetRandomItemIndex(numFacingTypes, weight);
+  } else {
+    // 14w27a
+    // 1.7.10
+    return 0;
   }
 }
 
