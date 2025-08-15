@@ -1,18 +1,20 @@
-#if defined(__OPENCL_C_VERSION__ )
+#if defined(__OPENCL_C_VERSION__)
 typedef long i64;
 typedef int i32;
-#define MULTIPLIER (0x5DEECE66DL)
-#define ADDEND (0xBL)
-#define MASK ((1L << 48) - 1L)
+typedef uint u32;
 #define LONG(v) (v##L)
 #else
-typedef int64_t i64;
-typedef int32_t i32;
-#define MULTIPLIER (0x5DEECE66DLL)
-#define ADDEND (0xBLL)
-#define MASK ((1LL << 48) - 1LL)
+using i64 = int64_t;
+using i32 = int32_t;
+using u32 = uint32_t;
+#define __global
+#define __kernel
 #define LONG(v) (v##LL)
 #endif
+
+#define MULTIPLIER (LONG(0x5DEECE66D))
+#define ADDEND (LONG(0xB))
+#define MASK ((LONG(1) << 48) - LONG(1))
 
 static i64 Rand(i64 seed) {
   return (seed ^ MULTIPLIER) & MASK;
@@ -28,7 +30,8 @@ static i32 NextInt(i64 *state) {
 }
 
 static i32 NextIntBounded(i64* state, int n) {
-  if ((n & -n) == n) {  // i.e., n is a power of 2
+  if ((n & -n) == n) {
+    // n is a power of 2
     return (i32)((n * (i64)Next(state, 31)) >> 31);
   }
 
@@ -48,7 +51,7 @@ static i64 NextLong(i64 *state) {
 }
 
 static i64 GetPositionSeed(i32 x, i32 y, i32 z) {
-  i64 i = (i64)(x * LONG(3129871)) ^ (i64)z * LONG(116129781) ^ (i64)y;
+  i64 i = (i64)(x * 3129871) ^ (i64)z * LONG(116129781) ^ (i64)y;
   i = i * i * LONG(42317861) + i * LONG(11);
   return i >> 16;
 }
@@ -86,8 +89,93 @@ static i32 DirtRotation(i32 x, i32 y, i32 z, i32 dataVersion) {
   }
 }
 
+enum Facing {
+  FACING_UNKNOWN = -1,
+  FACING_NORTH = 1,
+  FACING_EAST = 2,
+  FACING_SOUTH = 3,
+  FACING_WEST = 4,
+};
+
+static i32 SatisfiesPredicates(__global i32 const* xPredicate, __global i32 const* yPredicate, __global i32 const* zPredicate, __global i32 const* rotationPredicate, u32 numPredicates,
+                               i32 facing, i32 x, i32 y, i32 z, i32 dataVersion) {
+  if (facing == FACING_UNKNOWN) {
+    for (i32 offset = 0; offset < 4; offset++) {
+      bool ok = true;
+      for (u32 i = 0; i < numPredicates; i++) {
+        i32 bx = x + xPredicate[i];
+        i32 by = y + yPredicate[i];
+        i32 bz = z + zPredicate[i];
+        i32 actual = DirtRotation(bx, by, bz, dataVersion);
+        i32 expected = rotationPredicate[i] + offset;
+        if (expected > 3) {
+          expected -= 4;
+        }
+        if (actual != expected) {
+          ok = false;
+          break;
+        }
+      }
+      if (!ok) {
+        continue;
+      }
+      switch (offset) {
+      case 0:
+        return FACING_NORTH;
+      case 1:
+        return FACING_EAST;
+      case 2:
+        return FACING_SOUTH;
+      case 3:
+        return FACING_WEST;
+      default:
+        return -1;
+      }
+    }
+    return -1;
+  } else {
+    i32 offset = 0;
+    if (facing == FACING_EAST) {
+      offset = 1;
+    } else if (facing == FACING_SOUTH) {
+      offset = 2;
+    } else if (facing == FACING_WEST) {
+      offset = 3;
+    }
+    for (u32 i = 0; i < numPredicates; i++) {
+      i32 bx = x + xPredicate[i];
+      i32 by = y + yPredicate[i];
+      i32 bz = z + zPredicate[i];
+      i32 actual = DirtRotation(bx, by, bz, dataVersion);
+      i32 expected = rotationPredicate[i] + offset;
+      if (expected > 3) {
+        expected -= 4;
+      }
+      if (actual != expected) {
+        return -1;
+      }
+    }
+    return facing;
+  }
+}
+
 #if defined(__OPENCL_C_VERSION__)
-__kernel void run(__global i32 *rot, i32 x, i32 y, i32 z, i32 dataVersion) {
-  *rot = DirtRotation(x, y, z, dataVersion);
+__kernel void run(__global i32 const* xPredicate, __global i32 const* yPredicate, __global i32 const* zPredicate, __global i32 const* rotationPredicate, u32 numPredicates,
+                  i32 facing, i32 dataVersion,
+                  i32 minX, i32 maxX, i32 minY, i32 maxY, i32 minZ, i32 maxZ,
+                  __global i32 *result, __global u32 *count) {
+  i32 x = minX + get_global_id(0);
+  i32 y = minY + get_global_id(1);
+  i32 z = minZ + get_global_id(2);
+  i32 f = SatisfiesPredicates(xPredicate, yPredicate, zPredicate, rotationPredicate, numPredicates, facing, x, y, z, dataVersion);
+  if (f > 0) {
+    u32 c = atomic_inc(count) + 1;
+    if (c == 1) {
+      result[0] = x;
+      result[1] = y;
+      result[2] = z;
+      result[3] = f;
+    }
+  }
 }
 #endif
