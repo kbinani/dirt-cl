@@ -57,8 +57,7 @@ static i64 GetPositionSeed_v0(i32 x, i32 y, i32 z) {
 }
 
 static i64 GetPositionSeed_v1(i32 x, i32 y, i32 z) {
-  i64 i = (i64)(x * 3129871) ^ (i64)z * LONG(116129781) ^ (i64)y;
-  i = i * i * LONG(42317861) + i * LONG(11);
+  i64 i = GetPositionSeed_v0(x, y, z);
   return i >> 16;
 }
 
