@@ -37,6 +37,8 @@ int main(int argc, char* argv[]) {
   optional<i32> maxZ;
   int dataVersion = INT_MAX;
   vector<i32> simple;
+  size_t platformIndex = 0;
+  size_t deviceIndex = 0;
   for (int i = 1; i < argc; i++) {
     string v = argv[i];
     if (!v.starts_with("-")) {
@@ -132,6 +134,28 @@ int main(int argc, char* argv[]) {
         cerr << "cannot parse -v option: " << argv[i] << endl;
         return 1;
       }
+    } else if (v == "--platform") {
+      i32 t;
+      if (sscanf(argv[i], "%d", &t) != 1) {
+        cerr << "cannot parse " << v << " option: " << argv[i] << endl;
+        return 1;
+      }
+      if (t < 0) {
+        cerr << "invalid value for " << v << " option: " << argv[i] << endl;
+        return 1;
+      }
+      platformIndex = t;
+    } else if (v == "--device") {
+      i32 t;
+      if (sscanf(argv[i], "%d", &t) != 1) {
+        cerr << "cannot parse " << v << " option: " << argv[i] << endl;
+        return 1;
+      }
+      if (t < 0) {
+        cerr << "invalid value for " << v << " option: " << argv[i] << endl;
+        return 1;
+      }
+      deviceIndex = t;
     }
   }
   if (!minX || !maxX || !minY || !maxY || !minZ || !maxZ) {
@@ -160,18 +184,48 @@ int main(int argc, char* argv[]) {
   cout << "  path: " << cl << endl;
   cout << "  size: " << src.size() << endl;
 
-  cl::Platform platform = cl::Platform::getDefault();
-  cout << "platform:" << endl;
+  vector<cl::Platform> platforms;
+  if (cl::Platform::get(&platforms) != CL_SUCCESS) {
+    return 1;
+  }
+  if (platforms.empty()) {
+    cerr << "no platform found" << endl;
+    return 1;
+  }
+  cout << "platforms:" << endl;
+  for (size_t i = 0; i < platforms.size(); i++) {
+    cout << "  #" << i << ": " << platforms[i].getInfo<CL_PLATFORM_NAME>() << endl;
+  }
+
+  cl::Platform platform;
+  if (platformIndex >= platforms.size()) {
+    cerr << "--platform option is out of range" << endl;
+    return 1;
+  }
+  platform = platforms[platformIndex];
+  cout << "selected platform:" << endl;
   cout << "  name: " << platform.getInfo<CL_PLATFORM_NAME>() << endl;
   cout << "  version: " << platform.getInfo<CL_PLATFORM_VERSION>() << endl;
   vector<cl::Device> devices;
-  platform.getDevices(CL_DEVICE_TYPE_GPU, &devices);
-
-  if (devices.empty()) {
+  if (platform.getDevices(CL_DEVICE_TYPE_GPU, &devices) != CL_SUCCESS) {
     return 1;
   }
-  cl::Device device = devices[0];
-  cout << "device: " << endl;
+  if (devices.empty()) {
+    cerr << "no device found" << endl;
+    return 1;
+  }
+  cout << "devices:" << endl;
+  for (size_t i = 0; i < devices.size(); i++) {
+    cout << "  #" << i << ": " << devices[i].getInfo<CL_DEVICE_NAME>() << endl;
+  }
+
+  cl::Device device;
+  if (deviceIndex >= devices.size()) {
+    cerr << "--device option is out of range" << endl;
+    return 1;
+  }
+  device = devices[deviceIndex];
+  cout << "selected device: " << endl;
   cout << "  name: " << device.getInfo<CL_DEVICE_NAME>() << endl;
   cout << "  version: " << device.getInfo<CL_DEVICE_VERSION>() << endl;
   cl::Context ctx(device);

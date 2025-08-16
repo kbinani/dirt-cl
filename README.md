@@ -36,6 +36,8 @@ cmake --build ./build
     |:------------:|:------------:|:------------:|:------------:|
     |<img src="img/dirt.png" width="128" height="128">|<img src="img/dirt-rotation-1.png" width="128" height="128">|<img src="img/dirt-rotation-2.png" width="128" height="128">|<img src="img/dirt-rotation-3.png" width="128" height="128">|
 - `-v`: [Data version](https://minecraft.wiki/w/Data_version) specifying the client version (optional, default INT_MAX, means latest version)
+- `--platform`: Index of the platform to use (optional, default = 0)
+- `--device`: Index of the device to use (optional, default = 0)
 
 ### Example
 
