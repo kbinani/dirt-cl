@@ -32,15 +32,9 @@ cmake --build ./build
 - `-r`: Rotation values list (required, comma-separated, values 0-3)
 - `-v`: [Data version](https://minecraft.wiki/w/Data_version) specifying the client version (optional, default INT_MAX, means latest version)
 
-```
-    rotation = 0   rotation = 1   rotation = 2   rotation = 3
-    _____________  _____________  _____________  _____________
-    |         ==|  |           |  |           |  | I         |
-    |       ==  |  |           |  |           |  |  I        |
-    |           |  |           |  |           |  |           |
-    |           |  |        I  |  |  ==       |  |           |
-    |___________|  |_________I_|  |==_________|  |___________|
-```
+| rotation = 0 | rotation = 1 | rotation = 2 | rotation = 3 |
+|:------------:|:------------:|:------------:|:------------:|
+|<img src="dirt.png" width="128" height="128">|<img src="dirt.png" width="128" height="128" style="transform: rotate(90deg);">|<img src="dirt.png" width="128" height="128" style="transform: rotate(180deg);">|<img src="dirt.png" width="128" height="128" style="transform: rotate(270deg);">|
 
 ### Example
 
