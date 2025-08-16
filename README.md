@@ -34,7 +34,7 @@ cmake --build ./build
 
 | rotation = 0 | rotation = 1 | rotation = 2 | rotation = 3 |
 |:------------:|:------------:|:------------:|:------------:|
-|<img src="dirt.png" width="128" height="128">|<img src="dirt.png" width="128" height="128" style="transform: rotate(90deg);">|<img src="dirt.png" width="128" height="128" style="transform: rotate(180deg);">|<img src="dirt.png" width="128" height="128" style="transform: rotate(270deg);">|
+|<img src="img/dirt.png" width="128" height="128">|<img src="img/dirt-rotation-1.png" width="128" height="128">|<img src="img/dirt-rotation-2.png" width="128" height="128">|<img src="img/dirt-rotation-3.png" width="128" height="128">|
 
 ### Example
 
