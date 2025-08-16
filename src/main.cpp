@@ -15,6 +15,17 @@
 
 using namespace std;
 
+template<class... T>
+static bool SetArgsFrom(cl::Kernel& kernel, cl_uint start, T const&... args) {
+  cl_uint i = start;
+  return ((kernel.setArg(i++, args) == CL_SUCCESS) && ...);
+}
+
+template<class... T>
+static bool SetArgs(cl::Kernel& kernel, T const&... args) {
+  return SetArgsFrom(kernel, 0, args...);
+}
+
 int main(int argc, char* argv[]) {
   string cl;
   Facing facing = FACING_UNKNOWN;
@@ -202,50 +213,7 @@ int main(int argc, char* argv[]) {
   if (queue.enqueueFillBuffer<i32>(count, 0, 0, sizeof(i32)) != CL_SUCCESS) {
     return 1;
   }
-
-  if (kernel.setArg<cl::Buffer>(0, xPredicate) != CL_SUCCESS) {
-    return 1;
-  }
-  if (kernel.setArg<cl::Buffer>(1, yPredicate) != CL_SUCCESS) {
-    return 1;
-  }
-  if (kernel.setArg<cl::Buffer>(2, zPredicate) != CL_SUCCESS) {
-    return 1;
-  }
-  if (kernel.setArg<cl::Buffer>(3, rotationPredicate) != CL_SUCCESS) {
-    return 1;
-  }
-  if (kernel.setArg<u32>(4, (u32)simple.size()) != CL_SUCCESS) {
-    return 1;
-  }
-  if (kernel.setArg<i32>(5, facing) != CL_SUCCESS) {
-    return 1;
-  }
-  if (kernel.setArg<i32>(6, dataVersion) != CL_SUCCESS) {
-    return 1;
-  }
-  if (kernel.setArg<i32>(7, *minX) != CL_SUCCESS) {
-    return 1;
-  }
-  if (kernel.setArg<i32>(8, *maxX) != CL_SUCCESS) {
-    return 1;
-  }
-  if (kernel.setArg<i32>(9, *minY) != CL_SUCCESS) {
-    return 1;
-  }
-  if (kernel.setArg<i32>(10, *maxY) != CL_SUCCESS) {
-    return 1;
-  }
-  if (kernel.setArg<i32>(11, *minZ) != CL_SUCCESS) {
-    return 1;
-  }
-  if (kernel.setArg<i32>(12, *maxZ) != CL_SUCCESS) {
-    return 1;
-  }
-  if (kernel.setArg<cl::Buffer>(13, result) != CL_SUCCESS) {
-    return 1;
-  }
-  if (kernel.setArg<cl::Buffer>(14, count) != CL_SUCCESS) {
+  if (!SetArgs(kernel, xPredicate, yPredicate, zPredicate, rotationPredicate, (u32)simple.size(), facing, dataVersion, *minX, *minY, *minZ, result, count)) {
     return 1;
   }
 

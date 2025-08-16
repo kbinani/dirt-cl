@@ -197,7 +197,7 @@ static i32 SatisfiesPredicates(__global i32 const* xPredicate, __global i32 cons
 #if defined(__OPENCL_C_VERSION__)
 __kernel void run(__global i32 const* xPredicate, __global i32 const* yPredicate, __global i32 const* zPredicate, __global i32 const* rotationPredicate, u32 numPredicates,
                   i32 facing, i32 dataVersion,
-                  i32 minX, i32 maxX, i32 minY, i32 maxY, i32 minZ, i32 maxZ,
+                  i32 minX, i32 minY, i32 minZ,
                   __global i32 *result, __global u32 *count) {
   i32 x = minX + get_global_id(0);
   i32 y = minY + get_global_id(1);
