@@ -30,7 +30,7 @@ cmake --build ./build
 - `-y`, `-Y`: Y coordinate range (required, set minimum by -y, maximum by -Y)
 - `-z`, `-Z`: Z coordinate range (required, set minimum by -z, maximum by -Z)
 - `-r`: Rotation values list (required, comma-separated, values 0-3)
-- `-v`: Data version specifying the client version (optional, default INT_MAX, means latest version)
+- `-v`: [Data version](https://minecraft.wiki/w/Data_version) specifying the client version (optional, default INT_MAX, means latest version)
 
 ```
     rotation = 0   rotation = 1   rotation = 2   rotation = 3
