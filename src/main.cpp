@@ -10,6 +10,7 @@
 #include <vector>
 #include <string>
 #include <optional>
+#include <chrono>
 
 #include "./kernel.cl"
 
@@ -271,6 +272,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  auto start = chrono::high_resolution_clock::now();
   u32 dx = *maxX - *minX + 1;
   u32 dy = *maxY - *minY + 1;
   u32 dz = *maxZ - *minZ + 1;
@@ -286,9 +288,16 @@ int main(int argc, char* argv[]) {
   if (queue.enqueueReadBuffer(count, CL_TRUE, 0, sizeof(u32) * readCount.size(), readCount.data()) != CL_SUCCESS) {
     return 1;
   }
+  queue.flush();
+  queue.finish();
 
+  auto elapsed = chrono::high_resolution_clock::now() - start;
+  double seconds = chrono::duration_cast<chrono::milliseconds>(elapsed).count() / 1000.0;
+
+  cout << "result:" << endl;
+  cout << "  " << seconds << " seconds elapsed" << endl;
   if (readCount[0] == 1) {
-    cout << "x=" << readResult[0] << ", y=" << readResult[1] << ", z=" << readResult[2];
+    cout << "  x=" << readResult[0] << ", y=" << readResult[1] << ", z=" << readResult[2];
     if (facing < 0) {
       cout << ", facing=";
       switch (readResult[3]) {
@@ -310,13 +319,10 @@ int main(int argc, char* argv[]) {
     }
     cout << endl;
   } else if (readCount[0] == 0) {
-    cout << "No coordinates matching the conditions were found" << endl;
+    cout << "  No coordinates matching the conditions were found" << endl;
   } else {
-    cout << "Multiple coordinates matching the conditions were found" << endl;
+    cout << "  Multiple coordinates matching the conditions were found" << endl;
   }
-
-  queue.flush();
-  queue.finish();
 
   return 0;
 }

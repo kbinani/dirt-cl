@@ -42,5 +42,24 @@ cmake --build ./build
 ### Example
 
 ```sh
-./dirt-cl -i src/kernel.cl -v 4440 -f north -x 0 -X 100 -y 60 -Y 70 -z 0 -Z 100 -r 0,1,2,3
+$ ./dirt-cl --platform 0 -i src/kernel.cl -v 4440 -f east -x -100000 -X 100000 -y 63 -Y 80 -z -100000 -Z 100000 -r 3,2,1,2,0,3,3,1,2,1,0,2,1,0,3,3,3,1,3,3,3,2,2,3,2,2,2,0,1,2,2,2
+src:
+  path: src/kernel.cl
+  size: 5365
+platforms:
+  #0: NVIDIA CUDA
+  #1: Intel(R) OpenCL
+  #2: Intel(R) FPGA Emulation Platform for OpenCL(TM)
+  #3: Intel(R) FPGA SDK for OpenCL(TM)
+selected platform:
+  name: NVIDIA CUDA
+  version: OpenCL 3.0 CUDA 12.6.65
+devices:
+  #0: NVIDIA GeForce RTX 4090
+selected device:
+  name: NVIDIA GeForce RTX 4090
+  version: OpenCL 3.0 CUDA
+result:
+  5.48 seconds elapsed
+  x=-74857, y=73, z=-57818
 ```
