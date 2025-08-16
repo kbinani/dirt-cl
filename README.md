@@ -29,7 +29,7 @@ cmake --build ./build
 - `-x`, `-X`: X coordinate range (required, set minimum by -x, maximum by -X)
 - `-y`, `-Y`: Y coordinate range (required, set minimum by -y, maximum by -Y)
 - `-z`, `-Z`: Z coordinate range (required, set minimum by -z, maximum by -Z)
-- `-r`: Rotation values list (required, comma-separated, values 0-3)
+- `-r`: List of block rotations (required, comma-separated list of values 0-3 representing top surface texture rotation. The first element corresponds to the base Y coordinate, and each subsequent element corresponds to Y+1, Y+2, etc.)
 - `-v`: [Data version](https://minecraft.wiki/w/Data_version) specifying the client version (optional, default INT_MAX, means latest version)
 
 | rotation = 0 | rotation = 1 | rotation = 2 | rotation = 3 |
