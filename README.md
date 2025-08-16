@@ -29,12 +29,13 @@ cmake --build ./build
 - `-x`, `-X`: X coordinate range (required, set minimum by -x, maximum by -X)
 - `-y`, `-Y`: Y coordinate range (required, set minimum by -y, maximum by -Y)
 - `-z`, `-Z`: Z coordinate range (required, set minimum by -z, maximum by -Z)
-- `-r`: List of block rotations (required, comma-separated list of values 0-3 representing top surface texture rotation. The first element corresponds to the base Y coordinate, and each subsequent element corresponds to Y+1, Y+2, etc.)
+- `-r`: List of block rotations (required)
+  - Comma-separated list of values 0-3 representing top surface texture rotation.
+  - The first element corresponds to the base Y coordinate, and each subsequent element corresponds to Y+1, Y+2, etc.
+    | rotation = 0 | rotation = 1 | rotation = 2 | rotation = 3 |
+    |:------------:|:------------:|:------------:|:------------:|
+    |<img src="img/dirt.png" width="128" height="128">|<img src="img/dirt-rotation-1.png" width="128" height="128">|<img src="img/dirt-rotation-2.png" width="128" height="128">|<img src="img/dirt-rotation-3.png" width="128" height="128">|
 - `-v`: [Data version](https://minecraft.wiki/w/Data_version) specifying the client version (optional, default INT_MAX, means latest version)
-
-| rotation = 0 | rotation = 1 | rotation = 2 | rotation = 3 |
-|:------------:|:------------:|:------------:|:------------:|
-|<img src="img/dirt.png" width="128" height="128">|<img src="img/dirt-rotation-1.png" width="128" height="128">|<img src="img/dirt-rotation-2.png" width="128" height="128">|<img src="img/dirt-rotation-3.png" width="128" height="128">|
 
 ### Example
 
