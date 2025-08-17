@@ -1,6 +1,6 @@
 # dirt-cl
 
-A tool that uses OpenCL to identify block positions from multiple Minecraft dirt block texture orientations.
+A command line tool to identify block positions from multiple Minecraft dirt block texture orientations with OpenCL acceleration.
 
 ## Features
 
