@@ -15,8 +15,7 @@
 
 #include "./kernel.hpp"
 #include "./kernel.cl"
-
-using namespace std;
+#include "./predicate.hpp"
 
 template<class... T>
 static bool SetArgsFrom(cl::Kernel& kernel, cl_uint start, T const&... args) {
@@ -30,6 +29,9 @@ static bool SetArgs(cl::Kernel& kernel, T const&... args) {
 }
 
 int main(int argc, char* argv[]) {
+  using namespace std;
+  using namespace dirt;
+
   optional<string> kernelFile;
   Facing facing = FACING_UNKNOWN;
   optional<i32> minX;
@@ -39,7 +41,7 @@ int main(int argc, char* argv[]) {
   optional<i32> minZ;
   optional<i32> maxZ;
   int dataVersion = INT_MAX;
-  vector<i32> simple;
+  vector<Predicate> predicates;
   size_t platformIndex = 0;
   size_t deviceIndex = 0;
   for (int i = 1; i < argc; i++) {
@@ -112,8 +114,13 @@ int main(int argc, char* argv[]) {
       }
       maxZ = t;
     } else if (v == "-r") {
+      if (!predicates.empty()) {
+        cerr << "-p option and -r option are specified at the same time" << endl;
+        return 1;
+      }
       v = string(argv[i]);
       size_t offset = 0;
+      i32 y = 0;
       while (true) {
         auto found = v.find(',', offset);
         if (found == string::npos) {
@@ -129,7 +136,13 @@ int main(int argc, char* argv[]) {
           cerr << "invalid range for -r option: " << argv[i] << " (must be 0 <= value <= 3)" << endl;
           return 1;
         }
-        simple.push_back(t);
+        Predicate p;
+        p.dx = 0;
+        p.dy = y;
+        p.dz = 0;
+        p.r = t;
+        predicates.push_back(p);
+        y++;
         offset = found + 1;
       }
     } else if (v == "-v") {
@@ -159,6 +172,43 @@ int main(int argc, char* argv[]) {
         return 1;
       }
       deviceIndex = t;
+    } else if (v == "-p") {
+      if (!predicates.empty()) {
+        cerr << "-p option and -r option are specified at the same time" << endl;
+        return 1;
+      }
+      v = argv[i];
+      while (!v.empty()) {
+        auto begin = v.find('{');
+        if (begin == string::npos) {
+          break;
+        }
+        auto end = v.find('}', begin + 1);
+        if (end == string::npos) {
+          cerr << "invalid json format" << endl;
+          return 1;
+        }
+        auto json = v.substr(begin, end - begin + 1);
+        auto p = Predicate::FromJSON(json);
+        if (!p) {
+          cerr << "failed to parse as json: " << json << endl;
+          return 1;
+        }
+        predicates.push_back(*p);
+        v = v.substr(end + 1);
+        if (!v.empty()) {
+          if (v.starts_with(',')) {
+            v = v.substr(1);
+          } else {
+            cerr << "failed to parse as json" << endl;
+            return 1;
+          }
+        }
+      }
+      if (!v.empty()) {
+        cerr << "failed to parse as json: " << argv[i] << endl;
+        return 1;
+      }
     } else {
       cerr << "unknown option: " << v << endl;
       return 1;
@@ -246,36 +296,40 @@ int main(int argc, char* argv[]) {
   }
   cl::Kernel kernel(program, "run");
 
-  cl::Buffer xPredicate(ctx, CL_MEM_READ_WRITE, sizeof(i32) * simple.size(), nullptr);
-  cl::Buffer yPredicate(ctx, CL_MEM_READ_WRITE, sizeof(i32) * simple.size(), nullptr);
-  cl::Buffer zPredicate(ctx, CL_MEM_READ_WRITE, sizeof(i32) * simple.size(), nullptr);
-  cl::Buffer rotationPredicate(ctx, CL_MEM_READ_WRITE, sizeof(i32) * simple.size(), nullptr);
+  cl::Buffer xPredicate(ctx, CL_MEM_READ_WRITE, sizeof(i32) * predicates.size(), nullptr);
+  cl::Buffer yPredicate(ctx, CL_MEM_READ_WRITE, sizeof(i32) * predicates.size(), nullptr);
+  cl::Buffer zPredicate(ctx, CL_MEM_READ_WRITE, sizeof(i32) * predicates.size(), nullptr);
+  cl::Buffer rotationPredicate(ctx, CL_MEM_READ_WRITE, sizeof(i32) * predicates.size(), nullptr);
   {
+    vector<i32> x;
     vector<i32> y;
+    vector<i32> z;
     vector<i32> r;
-    for (i32 i = 0; i < (i32)simple.size(); i++) {
-      y.push_back(i);
-      r.push_back(simple[i]);
+    for (auto const& p : predicates) {
+      x.push_back(p.dx);
+      y.push_back(p.dy);
+      z.push_back(p.dz);
+      r.push_back(p.r);
     }
-    if (queue.enqueueWriteBuffer(yPredicate, CL_TRUE, 0, sizeof(i32) * simple.size(), y.data()) != CL_SUCCESS) {
+    if (queue.enqueueWriteBuffer(xPredicate, CL_TRUE, 0, sizeof(i32) * predicates.size(), x.data()) != CL_SUCCESS) {
       return 1;
     }
-    if (queue.enqueueWriteBuffer(rotationPredicate, CL_TRUE, 0, sizeof(i32) * simple.size(), r.data()) != CL_SUCCESS) {
+    if (queue.enqueueWriteBuffer(yPredicate, CL_TRUE, 0, sizeof(i32) * predicates.size(), y.data()) != CL_SUCCESS) {
       return 1;
     }
-  }
-  if (queue.enqueueFillBuffer<i32>(xPredicate, 0, 0, sizeof(i32) * simple.size()) != CL_SUCCESS) {
-    return 1;
-  }
-  if (queue.enqueueFillBuffer<i32>(zPredicate, 0, 0, sizeof(i32) * simple.size()) != CL_SUCCESS) {
-    return 1;
+    if (queue.enqueueWriteBuffer(zPredicate, CL_TRUE, 0, sizeof(i32) * predicates.size(), z.data()) != CL_SUCCESS) {
+      return 1;
+    }
+    if (queue.enqueueWriteBuffer(rotationPredicate, CL_TRUE, 0, sizeof(i32) * predicates.size(), r.data()) != CL_SUCCESS) {
+      return 1;
+    }
   }
   cl::Buffer result(ctx, CL_MEM_READ_WRITE, sizeof(i32) * 4, nullptr);
   cl::Buffer count(ctx, CL_MEM_READ_WRITE, sizeof(u32), nullptr);
   if (queue.enqueueFillBuffer<i32>(count, 0, 0, sizeof(i32)) != CL_SUCCESS) {
     return 1;
   }
-  if (!SetArgs(kernel, xPredicate, yPredicate, zPredicate, rotationPredicate, (u32)simple.size(), facing, dataVersion, *minX, *minY, *minZ, result, count)) {
+  if (!SetArgs(kernel, xPredicate, yPredicate, zPredicate, rotationPredicate, (u32)predicates.size(), facing, dataVersion, *minX, *minY, *minZ, result, count)) {
     return 1;
   }
 

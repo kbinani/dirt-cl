@@ -40,7 +40,7 @@ endfunction()
 
 resource(src/kernel.cl src/kernel.hpp kernel)
 
-add_executable(dirt-cl src/main.cpp src/kernel.cl src/kernel.hpp)
+add_executable(dirt-cl src/main.cpp src/kernel.cl src/kernel.hpp src/predicate.hpp)
 
 if (APPLE)
   add_compile_definitions(CL_HPP_TARGET_OPENCL_VERSION=120 CL_HPP_MINIMUM_OPENCL_VERSION=120)
