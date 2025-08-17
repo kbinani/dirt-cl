@@ -19,12 +19,11 @@ cmake --build ./build
 ## Usage
 
 ```sh
-./dirt-cl -i <src/kernel.cl> -f <facing> -x <minX> -X <maxX> -y <minY> -Y <maxY> -z <minZ> -Z <maxZ> -r <rotations> -v <dataVersion>
+./dirt-cl -f <facing> -x <minX> -X <maxX> -y <minY> -Y <maxY> -z <minZ> -Z <maxZ> -r <rotations> -v <dataVersion>
 ```
 
 ### Options
 
-- `-i`: Path to src/kernel.cl file (required)
 - `-f`: Facing direction (optional, `north`, `east`, `south`, `west`)
 - `-x`, `-X`: X coordinate range (required, set minimum by -x, maximum by -X)
 - `-y`, `-Y`: Y coordinate range (required, set minimum by -y, maximum by -Y)
@@ -36,16 +35,17 @@ cmake --build ./build
     |:------------:|:------------:|:------------:|:------------:|
     |<img src="img/dirt.png" width="128" height="128">|<img src="img/dirt-rotation-1.png" width="128" height="128">|<img src="img/dirt-rotation-2.png" width="128" height="128">|<img src="img/dirt-rotation-3.png" width="128" height="128">|
 - `-v`: [Data version](https://minecraft.wiki/w/Data_version) specifying the client version (optional, default INT_MAX, means latest version)
-- `--platform`: Index of the platform to use (optional, default = 0)
-- `--device`: Index of the device to use (optional, default = 0)
+- `--platform`: Index of the platform to use (optional, default 0)
+- `--device`: Index of the device to use (optional, default 0)
+- `--kernel`: Path to src/kernel.cl file (optional)
 
 ### Example
 
 ```sh
-$ ./dirt-cl --platform 0 -i src/kernel.cl -v 4440 -f east -x -100000 -X 100000 -y 63 -Y 80 -z -100000 -Z 100000 -r 3,2,1,2,0,3,3,1,2,1,0,2,1,0,3,3,3,1,3,3,3,2,2,3,2,2,2,0,1,2,2,2
-src:
-  path: src/kernel.cl
-  size: 5365
+$ ./dirt-cl -v 4440 -f east -x -100000 -X 100000 -y 63 -Y 80 -z -100000 -Z 100000 -r 3,2,1,2,0,3,3,1,2,1,0,2,1,0,3,3,3,1,3,3,3,2,2,3,2,2,2,0,1,2,2,2
+kernel:
+  type: embedded
+  size: 5365 bytes
 platforms:
   #0: NVIDIA CUDA
   #1: Intel(R) OpenCL

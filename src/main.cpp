@@ -11,7 +11,9 @@
 #include <string>
 #include <optional>
 #include <chrono>
+#include <string_view>
 
+#include "./kernel.hpp"
 #include "./kernel.cl"
 
 using namespace std;
@@ -28,7 +30,7 @@ static bool SetArgs(cl::Kernel& kernel, T const&... args) {
 }
 
 int main(int argc, char* argv[]) {
-  string cl;
+  optional<string> kernelFile;
   Facing facing = FACING_UNKNOWN;
   optional<i32> minX;
   optional<i32> maxX;
@@ -51,8 +53,8 @@ int main(int argc, char* argv[]) {
       cerr << "too few arguments" << endl;
       return 1;
     }
-    if (v == "-i") {
-      cl = string(argv[i]);
+    if (v == "--kernel") {
+      kernelFile = string(argv[i]);
     } else if (v == "-f") {
       v = argv[i];
       if (v == "north") {
@@ -157,6 +159,9 @@ int main(int argc, char* argv[]) {
         return 1;
       }
       deviceIndex = t;
+    } else {
+      cerr << "unknown option: " << v << endl;
+      return 1;
     }
   }
   if (!minX || !maxX || !minY || !maxY || !minZ || !maxZ) {
@@ -165,12 +170,9 @@ int main(int argc, char* argv[]) {
   if (*minX > *maxX || *minY > *maxY || *minZ > *maxZ) {
     return 1;
   }
-  if (cl.empty()) {
-    return 1;
-  }
   string src;
-  {
-    FILE* file = fopen(cl.c_str(), "rb");
+  if (kernelFile) {
+    FILE* file = fopen(kernelFile->c_str(), "rb");
     if (!file) {
       return 1;
     }
@@ -180,10 +182,15 @@ int main(int argc, char* argv[]) {
       src.append(buffer, read);
     }
     fclose(file);
+    cout << "kernel:" << endl;
+    cout << "  type: file" << endl;
+    cout << "  path: " << *kernelFile << endl;
+  } else {
+    src = dirt::res::kernel;
+    cout << "kernel:" << endl;
+    cout << "  type: embedded" << endl;
   }
-  cout << "src:" << endl;
-  cout << "  path: " << cl << endl;
-  cout << "  size: " << src.size() << endl;
+  cout << "  size: " << src.size() << " bytes" << endl;
 
   vector<cl::Platform> platforms;
   if (cl::Platform::get(&platforms) != CL_SUCCESS) {
@@ -264,7 +271,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
   cl::Buffer result(ctx, CL_MEM_READ_WRITE, sizeof(i32) * 4, nullptr);
-  cl::Buffer count(ctx, CL_MEM_READ_WRITE, sizeof(i32), nullptr);
+  cl::Buffer count(ctx, CL_MEM_READ_WRITE, sizeof(u32), nullptr);
   if (queue.enqueueFillBuffer<i32>(count, 0, 0, sizeof(i32)) != CL_SUCCESS) {
     return 1;
   }
@@ -281,11 +288,11 @@ int main(int argc, char* argv[]) {
   }
 
   vector<i32> readResult(4);
-  vector<u32> readCount(1);
+  u32 readCount;
   if (queue.enqueueReadBuffer(result, CL_TRUE, 0, sizeof(i32) * readResult.size(), readResult.data()) != CL_SUCCESS) {
     return 1;
   }
-  if (queue.enqueueReadBuffer(count, CL_TRUE, 0, sizeof(u32) * readCount.size(), readCount.data()) != CL_SUCCESS) {
+  if (queue.enqueueReadBuffer(count, CL_TRUE, 0, sizeof(u32), &readCount) != CL_SUCCESS) {
     return 1;
   }
   queue.flush();
@@ -296,7 +303,7 @@ int main(int argc, char* argv[]) {
 
   cout << "result:" << endl;
   cout << "  " << seconds << " seconds elapsed" << endl;
-  if (readCount[0] == 1) {
+  if (readCount == 1) {
     cout << "  x=" << readResult[0] << ", y=" << readResult[1] << ", z=" << readResult[2];
     if (facing < 0) {
       cout << ", facing=";
@@ -318,7 +325,7 @@ int main(int argc, char* argv[]) {
       }
     }
     cout << endl;
-  } else if (readCount[0] == 0) {
+  } else if (readCount == 0) {
     cout << "  No coordinates matching the conditions were found" << endl;
   } else {
     cout << "  Multiple coordinates matching the conditions were found" << endl;
