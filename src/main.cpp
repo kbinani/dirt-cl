@@ -34,12 +34,12 @@ int main(int argc, char* argv[]) {
 
   optional<string> kernelFile;
   Facing facing = FACING_UNKNOWN;
-  optional<i32> minX;
-  optional<i32> maxX;
-  optional<i32> minY;
-  optional<i32> maxY;
-  optional<i32> minZ;
-  optional<i32> maxZ;
+  optional<int32_t> minX;
+  optional<int32_t> maxX;
+  optional<int32_t> minY;
+  optional<int32_t> maxY;
+  optional<int32_t> minZ;
+  optional<int32_t> maxZ;
   int dataVersion = INT_MAX;
   vector<Predicate> predicates;
   size_t platformIndex = 0;
@@ -72,42 +72,42 @@ int main(int argc, char* argv[]) {
         return 1;
       }
     } else if (v == "-x") {
-      i32 t;
+      int32_t t;
       if (sscanf(argv[i], "%d", &t) != 1) {
         cerr << "cannot parse " << v << endl;
         return 1;
       }
       minX = t;
     } else if (v == "-X") {
-      i32 t;
+      int32_t t;
       if (sscanf(argv[i], "%d", &t) != 1) {
         cerr << "cannot parse " << v << endl;
         return 1;
       }
       maxX = t;
     } else if (v == "-y") {
-      i32 t;
+      int32_t t;
       if (sscanf(argv[i], "%d", &t) != 1) {
         cerr << "cannot parse " << v << endl;
         return 1;
       }
       minY = t;
     } else if (v == "-Y") {
-      i32 t;
+      int32_t t;
       if (sscanf(argv[i], "%d", &t) != 1) {
         cerr << "cannot parse " << v << endl;
         return 1;
       }
       maxY = t;
     } else if (v == "-z") {
-      i32 t;
+      int32_t t;
       if (sscanf(argv[i], "%d", &t) != 1) {
         cerr << "cannot parse " << v << endl;
         return 1;
       }
       minZ = t;
     } else if (v == "-Z") {
-      i32 t;
+      int32_t t;
       if (sscanf(argv[i], "%d", &t) != 1) {
         cerr << "cannot parse " << v << endl;
         return 1;
@@ -120,14 +120,14 @@ int main(int argc, char* argv[]) {
       }
       v = string(argv[i]);
       size_t offset = 0;
-      i32 y = 0;
+      int32_t y = 0;
       while (true) {
         auto found = v.find(',', offset);
         if (found == string::npos) {
           break;
         }
         auto sub = v.substr(offset, found - offset);
-        i32 t;
+        int32_t t;
         if (sscanf(sub.c_str(), "%d", &t) != 1) {
           cerr << "invalid value for -r option: " << argv[i] << endl;
           return 1;
@@ -151,7 +151,7 @@ int main(int argc, char* argv[]) {
         return 1;
       }
     } else if (v == "--platform") {
-      i32 t;
+      int32_t t;
       if (sscanf(argv[i], "%d", &t) != 1) {
         cerr << "cannot parse " << v << " option: " << argv[i] << endl;
         return 1;
@@ -162,7 +162,7 @@ int main(int argc, char* argv[]) {
       }
       platformIndex = t;
     } else if (v == "--device") {
-      i32 t;
+      int32_t t;
       if (sscanf(argv[i], "%d", &t) != 1) {
         cerr << "cannot parse " << v << " option: " << argv[i] << endl;
         return 1;
@@ -241,6 +241,7 @@ int main(int argc, char* argv[]) {
     cout << "  type: embedded" << endl;
   }
   cout << "  size: " << src.size() << " bytes" << endl;
+  src = "#define DATA_VERSION (" + std::to_string(dataVersion) + ")\n" + src;
 
   vector<cl::Platform> platforms;
   if (cl::Platform::get(&platforms) != CL_SUCCESS) {
@@ -296,57 +297,57 @@ int main(int argc, char* argv[]) {
   }
   cl::Kernel kernel(program, "run");
 
-  cl::Buffer xPredicate(ctx, CL_MEM_READ_WRITE, sizeof(i32) * predicates.size(), nullptr);
-  cl::Buffer yPredicate(ctx, CL_MEM_READ_WRITE, sizeof(i32) * predicates.size(), nullptr);
-  cl::Buffer zPredicate(ctx, CL_MEM_READ_WRITE, sizeof(i32) * predicates.size(), nullptr);
-  cl::Buffer rotationPredicate(ctx, CL_MEM_READ_WRITE, sizeof(i32) * predicates.size(), nullptr);
+  cl::Buffer xPredicate(ctx, CL_MEM_READ_WRITE, sizeof(int32_t) * predicates.size(), nullptr);
+  cl::Buffer yPredicate(ctx, CL_MEM_READ_WRITE, sizeof(int32_t) * predicates.size(), nullptr);
+  cl::Buffer zPredicate(ctx, CL_MEM_READ_WRITE, sizeof(int32_t) * predicates.size(), nullptr);
+  cl::Buffer rotationPredicate(ctx, CL_MEM_READ_WRITE, sizeof(int32_t) * predicates.size(), nullptr);
   {
-    vector<i32> x;
-    vector<i32> y;
-    vector<i32> z;
-    vector<i32> r;
+    vector<int32_t> x;
+    vector<int32_t> y;
+    vector<int32_t> z;
+    vector<int32_t> r;
     for (auto const& p : predicates) {
       x.push_back(p.dx);
       y.push_back(p.dy);
       z.push_back(p.dz);
       r.push_back(p.r);
     }
-    if (queue.enqueueWriteBuffer(xPredicate, CL_TRUE, 0, sizeof(i32) * predicates.size(), x.data()) != CL_SUCCESS) {
+    if (queue.enqueueWriteBuffer(xPredicate, CL_TRUE, 0, sizeof(int32_t) * predicates.size(), x.data()) != CL_SUCCESS) {
       return 1;
     }
-    if (queue.enqueueWriteBuffer(yPredicate, CL_TRUE, 0, sizeof(i32) * predicates.size(), y.data()) != CL_SUCCESS) {
+    if (queue.enqueueWriteBuffer(yPredicate, CL_TRUE, 0, sizeof(int32_t) * predicates.size(), y.data()) != CL_SUCCESS) {
       return 1;
     }
-    if (queue.enqueueWriteBuffer(zPredicate, CL_TRUE, 0, sizeof(i32) * predicates.size(), z.data()) != CL_SUCCESS) {
+    if (queue.enqueueWriteBuffer(zPredicate, CL_TRUE, 0, sizeof(int32_t) * predicates.size(), z.data()) != CL_SUCCESS) {
       return 1;
     }
-    if (queue.enqueueWriteBuffer(rotationPredicate, CL_TRUE, 0, sizeof(i32) * predicates.size(), r.data()) != CL_SUCCESS) {
+    if (queue.enqueueWriteBuffer(rotationPredicate, CL_TRUE, 0, sizeof(int32_t) * predicates.size(), r.data()) != CL_SUCCESS) {
       return 1;
     }
   }
-  cl::Buffer result(ctx, CL_MEM_READ_WRITE, sizeof(i32) * 4, nullptr);
-  cl::Buffer count(ctx, CL_MEM_READ_WRITE, sizeof(u32), nullptr);
-  if (queue.enqueueFillBuffer<i32>(count, 0, 0, sizeof(i32)) != CL_SUCCESS) {
+  cl::Buffer result(ctx, CL_MEM_READ_WRITE, sizeof(int32_t) * 4, nullptr);
+  cl::Buffer count(ctx, CL_MEM_READ_WRITE, sizeof(uint32_t), nullptr);
+  if (queue.enqueueFillBuffer<int32_t>(count, 0, 0, sizeof(int32_t)) != CL_SUCCESS) {
     return 1;
   }
-  if (!SetArgs(kernel, xPredicate, yPredicate, zPredicate, rotationPredicate, (u32)predicates.size(), facing, dataVersion, *minX, *minY, *minZ, result, count)) {
+  if (!SetArgs(kernel, xPredicate, yPredicate, zPredicate, rotationPredicate, (uint32_t)predicates.size(), facing, *minX, *minY, *minZ, result, count)) {
     return 1;
   }
 
   auto start = chrono::high_resolution_clock::now();
-  u32 dx = *maxX - *minX + 1;
-  u32 dy = *maxY - *minY + 1;
-  u32 dz = *maxZ - *minZ + 1;
+  uint32_t dx = *maxX - *minX + 1;
+  uint32_t dy = *maxY - *minY + 1;
+  uint32_t dz = *maxZ - *minZ + 1;
   if (queue.enqueueNDRangeKernel(kernel, cl::NDRange(0, 0, 0), cl::NDRange(dx, dy, dz), cl::NullRange) != CL_SUCCESS) {
     return 1;
   }
 
-  vector<i32> readResult(4);
-  u32 readCount;
-  if (queue.enqueueReadBuffer(result, CL_TRUE, 0, sizeof(i32) * readResult.size(), readResult.data()) != CL_SUCCESS) {
+  vector<int32_t> readResult(4);
+  uint32_t readCount;
+  if (queue.enqueueReadBuffer(result, CL_TRUE, 0, sizeof(int32_t) * readResult.size(), readResult.data()) != CL_SUCCESS) {
     return 1;
   }
-  if (queue.enqueueReadBuffer(count, CL_TRUE, 0, sizeof(u32), &readCount) != CL_SUCCESS) {
+  if (queue.enqueueReadBuffer(count, CL_TRUE, 0, sizeof(uint32_t), &readCount) != CL_SUCCESS) {
     return 1;
   }
   queue.flush();

@@ -45,7 +45,7 @@ cmake --build ./build
 $ ./dirt-cl -v 4440 -f east -x -100000 -X 100000 -y 63 -Y 80 -z -100000 -Z 100000 -r 3,2,1,2,0,3,3,1,2,1,0,2,1,0,3,3,3,1,3,3,3,2,2,3,2,2,2,0,1,2,2,2
 kernel:
   type: embedded
-  size: 5365 bytes
+  size: 4918 bytes
 platforms:
   #0: NVIDIA CUDA
   #1: Intel(R) OpenCL
@@ -60,10 +60,30 @@ selected device:
   name: NVIDIA GeForce RTX 4090
   version: OpenCL 3.0 CUDA
 result:
-  5.48 seconds elapsed
+  5.225 seconds elapsed
   x=-74857, y=73, z=-57818
 ```
 
 ```txt
 $ ./dirt-cl --kernel src/kernel.cl -f east -x -100000 -X 100000 -y 63 -Y 80 -z -100000 -Z 100000 -p {dx:0,dy:0,dz:0,r:3},{dx:0,dy:1,dz:0,r:2},{dx:0,dy:3,dz:0,r:1}
+kernel:
+  type: file
+  path: src/kernel.cl
+  size: 4918 bytes
+platforms:
+  #0: NVIDIA CUDA
+  #1: Intel(R) OpenCL
+  #2: Intel(R) FPGA Emulation Platform for OpenCL(TM)
+  #3: Intel(R) FPGA SDK for OpenCL(TM)
+selected platform:
+  name: NVIDIA CUDA
+  version: OpenCL 3.0 CUDA 12.6.65
+devices:
+  #0: NVIDIA GeForce RTX 4090
+selected device:
+  name: NVIDIA GeForce RTX 4090
+  version: OpenCL 3.0 CUDA
+result:
+  4.592 seconds elapsed
+  Multiple coordinates matching the conditions were found
 ```

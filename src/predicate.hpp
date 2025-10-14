@@ -4,10 +4,10 @@ namespace dirt {
 
 class Predicate {
 public:
-  i32 dx;
-  i32 dy;
-  i32 dz;
-  i32 r;
+  int32_t dx;
+  int32_t dy;
+  int32_t dz;
+  int32_t r;
 
   static std::optional<Predicate> FromJSON(std::string const &json) {
     using namespace std;
@@ -15,10 +15,10 @@ public:
       return nullopt;
     }
     string str = json.substr(1, json.size() - 2);
-    optional<i32> dx;
-    optional<i32> dy;
-    optional<i32> dz;
-    optional<i32> r;
+    optional<int32_t> dx;
+    optional<int32_t> dy;
+    optional<int32_t> dz;
+    optional<int32_t> r;
     while (!str.empty()) {
       auto found = str.find(':');
       if (found == string::npos) {
@@ -35,7 +35,7 @@ public:
         value = str.substr(0, found);
         str = str.substr(found + 1);
       }
-      i32 t;
+      int32_t t;
       if (sscanf(value.c_str(), "%d", &t) != 1) {
         return nullopt;
       }

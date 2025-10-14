@@ -1,16 +1,17 @@
+enum Facing {
+  FACING_UNKNOWN = -1,
+  FACING_NORTH = 1,
+  FACING_EAST = 2,
+  FACING_SOUTH = 3,
+  FACING_WEST = 4,
+};
+
 #if defined(__OPENCL_C_VERSION__)
+
 typedef long i64;
 typedef int i32;
 typedef uint u32;
 #define LONG(v) (v##L)
-#else
-using i64 = int64_t;
-using i32 = int32_t;
-using u32 = uint32_t;
-#define __global
-#define __kernel
-#define LONG(v) (v##LL)
-#endif
 
 #define MULTIPLIER (LONG(0x5DEECE66D))
 #define ADDEND (LONG(0xB))
@@ -80,60 +81,51 @@ static i32 Abs(i32 v) {
   }
 }
 
-static i32 DirtRotation(i32 x, i32 y, i32 z, i32 dataVersion) {
-  i32 const numFacingTypes = 4;
-  if (dataVersion >= 4063 /* 24w36a */) {
-    // 1.21.2
-    // 24w36a
-    i64 seed = GetPositionSeed_v1(x, y, z);
-    i64 state = Rand(seed);
-    return NextIntBounded(&state, numFacingTypes);
-  } else if (dataVersion >= 1459 /* 18w01a */) {
-    // 24w35a
-    // 1.21.1
-    // 1.13
-    // 18w11a
-    // 18w07a
-    // 18w03a
-    // 18w01a
-    i64 seed = GetPositionSeed_v1(x, y, z);
-    i64 state = Rand(seed);
-    i32 weight = Abs((i32)NextLong(&state)) % numFacingTypes;
-    return GetRandomItemIndex(numFacingTypes, weight);
-  } else if (dataVersion >= 0) {
-    // TODO: Between 17w47a and 17w50a, the texture rotation method changed drastically and differs in each version, so further investigation is needed.
+static i32 DirtRotation(i32 x, i32 y, i32 z) {
+#if DATA_VERSION >= 4063 /* 24w36a */
+  // 1.21.2
+  // 24w36a
+  i64 seed = GetPositionSeed_v1(x, y, z);
+  i64 state = Rand(seed);
+  return NextIntBounded(&state, 4);
+#elif DATA_VERSION >= 1459 /* 18w01a */
+  // 24w35a
+  // 1.21.1
+  // 1.13
+  // 18w11a
+  // 18w07a
+  // 18w03a
+  // 18w01a
+  i64 seed = GetPositionSeed_v1(x, y, z);
+  i64 state = Rand(seed);
+  i32 weight = Abs((i32)NextLong(&state)) % 4;
+  return GetRandomItemIndex(4, weight);
+#elif DATA_VERSION >= 0
+  // TODO: Between 17w47a and 17w50a, the texture rotation method changed drastically and differs in each version, so further investigation is needed.
 
-    // 17w46a
-    // 1.12.2
-    // 1.12
-    // 1.9
-    // 1.8.9
-    // 14w31a
-    // 14w30a
-    // 14w29a
-    // 14w28a
-    // 14w27b
-    i64 s = GetPositionSeed_v0(x, y, z);
-    i32 v = ((i32)s) >> 16;
-    i32 weight = Abs(v) % numFacingTypes;
-    return GetRandomItemIndex(numFacingTypes, weight);
-  } else {
-    // 14w27a
-    // 1.7.10
-    return 0;
-  }
+  // 17w46a
+  // 1.12.2
+  // 1.12
+  // 1.9
+  // 1.8.9
+  // 14w31a
+  // 14w30a
+  // 14w29a
+  // 14w28a
+  // 14w27b
+  i64 s = GetPositionSeed_v0(x, y, z);
+  i32 v = ((i32)s) >> 16;
+  i32 weight = Abs(v) % 4;
+  return GetRandomItemIndex(4, weight);
+#else
+  // 14w27a
+  // 1.7.10
+  return 0;
+#endif
 }
 
-enum Facing {
-  FACING_UNKNOWN = -1,
-  FACING_NORTH = 1,
-  FACING_EAST = 2,
-  FACING_SOUTH = 3,
-  FACING_WEST = 4,
-};
-
 static i32 SatisfiesPredicates(__global i32 const* xPredicate, __global i32 const* yPredicate, __global i32 const* zPredicate, __global i32 const* rotationPredicate, u32 numPredicates,
-                               i32 facing, i32 x, i32 y, i32 z, i32 dataVersion) {
+                               i32 facing, i32 x, i32 y, i32 z) {
   if (facing == FACING_UNKNOWN) {
     for (i32 offset = 0; offset < 4; offset++) {
       bool ok = true;
@@ -141,7 +133,7 @@ static i32 SatisfiesPredicates(__global i32 const* xPredicate, __global i32 cons
         i32 bx = x + xPredicate[i];
         i32 by = y + yPredicate[i];
         i32 bz = z + zPredicate[i];
-        i32 actual = DirtRotation(bx, by, bz, dataVersion);
+        i32 actual = DirtRotation(bx, by, bz);
         i32 expected = rotationPredicate[i] + offset;
         if (expected > 3) {
           expected -= 4;
@@ -181,7 +173,7 @@ static i32 SatisfiesPredicates(__global i32 const* xPredicate, __global i32 cons
       i32 bx = x + xPredicate[i];
       i32 by = y + yPredicate[i];
       i32 bz = z + zPredicate[i];
-      i32 actual = DirtRotation(bx, by, bz, dataVersion);
+      i32 actual = DirtRotation(bx, by, bz);
       i32 expected = rotationPredicate[i] + offset;
       if (expected > 3) {
         expected -= 4;
@@ -194,15 +186,14 @@ static i32 SatisfiesPredicates(__global i32 const* xPredicate, __global i32 cons
   }
 }
 
-#if defined(__OPENCL_C_VERSION__)
 __kernel void run(__global i32 const* xPredicate, __global i32 const* yPredicate, __global i32 const* zPredicate, __global i32 const* rotationPredicate, u32 numPredicates,
-                  i32 facing, i32 dataVersion,
+                  i32 facing,
                   i32 minX, i32 minY, i32 minZ,
                   __global i32 *result, __global u32 *count) {
   i32 x = minX + get_global_id(0);
   i32 y = minY + get_global_id(1);
   i32 z = minZ + get_global_id(2);
-  i32 f = SatisfiesPredicates(xPredicate, yPredicate, zPredicate, rotationPredicate, numPredicates, facing, x, y, z, dataVersion);
+  i32 f = SatisfiesPredicates(xPredicate, yPredicate, zPredicate, rotationPredicate, numPredicates, facing, x, y, z);
   if (f > 0) {
     u32 c = atomic_inc(count) + 1;
     if (c == 1) {
